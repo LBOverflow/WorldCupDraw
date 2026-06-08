@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dogstar World Cup 2026 — Golden Boot Sweepstake</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pitch: #0b1f15;
+    --pitch-2: #133021;
+    --pitch-3: #1a3d2b;
+    --cream: #f5f1e8;
+    --cream-dim: #b8b3a3;
+    --gold: #f4c430;
+    --gold-warm: #d4a017;
+    --red: #d63031;
+    --red-shadow: #8a1f20;
+    --green-line: #2a5e3f;
+    --shadow: rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--pitch);
+    color: var(--cream);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse 80% 50% at top, rgba(244, 196, 48, 0.08), transparent 60%),
+      radial-gradient(ellipse 80% 50% at bottom, rgba(214, 48, 49, 0.04), transparent 60%);
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent 0, transparent 80px, rgba(255,255,255,0.012) 80px, rgba(255,255,255,0.012) 160px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-top: 1rem;
+  }
+
+  .header .eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 0.85rem;
+    font-weight: 600;
+  }
+
+  .header h1 {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(2.5rem, 6.5vw, 5rem);
+    letter-spacing: 0.03em;
+    line-height: 0.92;
+    text-transform: uppercase;
+    color: var(--cream);
+  }
+
+  .header h1 .accent {
+    color: var(--gold);
+    display: block;
+  }
+
+  .header .sub {
+    font-size: 0.9rem;
+    color: var(--cream-dim);
+    margin-top: 1rem;
+    font-style: italic;
+    letter-spacing: 0.02em;
+  }
+
+  /* SETUP */
+  .setup {
+    max-width: 560px;
+    margin: 3rem auto;
+    background: var(--pitch-2);
+    border: 1px solid var(--green-line);
+    border-radius: 4px;
+    padding: 2.5rem;
+    box-shadow: 0 30px 60px var(--shadow);
+    position: relative;
+  }
+
+  .setup::before, .setup::after {
+    content: '';
+    position: absolute;
+    width: 24px; height: 24px;
+    border: 2px solid var(--gold);
+  }
+  .setup::before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+  .setup::after { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
+  .setup h2 {
+    font-family: 'Anton', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .setup p {
+    color: var(--cream-dim);
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+  }
+
+  .player-input {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .player-input .num {
+    font-family: 'Anton', sans-serif;
+    color: var(--gold);
+    font-size: 1.4rem;
+    width: 2.2rem;
+    letter-spacing: 0.05em;
+  }
+
+  .player-input input {
+    flex: 1;
+    background: var(--pitch);
+    border: 1px solid var(--green-line);
+    color: var(--cream);
+    padding: 0.85rem 1rem;
+    font-family: inherit;
+    font-size: 1rem;
+    border-radius: 2px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .player-input input:focus { border-color: var(--gold); }
+  .player-input input::placeholder { color: rgba(245,241,232,0.3); }
+
+  .btn {
+    display: inline-block;
+    background: var(--gold);
+    color: var(--pitch);
+    border: none;
+    padding: 1rem 2rem;
+    font-family: 'Anton', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+    width: 100%;
+    margin-top: 1.5rem;
+  }
+  .btn:hover {
+    background: var(--cream);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(244, 196, 48, 0.25);
+  }
+
+  /* DRAW VIEW */
+  .draw-view { display: none; }
+  .draw-view.active { display: block; }
+
+  /* Progress */
+  .progress {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 2.5rem;
+    justify-content: center;
+  }
+  .progress-pip {
+    width: 80px;
+    height: 5px;
+    background: var(--pitch-2);
+    border-radius: 2px;
+    transition: background 0.3s;
+  }
+  .progress-pip.active { background: var(--gold); }
+  .progress-pip.current { background: var(--red); animation: pulse 1.5s ease-in-out infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* Pot Header */
+  .pot-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .pot-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.4em;
+    color: var(--cream-dim);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .pot-title {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  .pot-subtitle {
+    color: var(--cream-dim);
+    margin-top: 0.6rem;
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+  }
+
+  /* Stage */
+  .stage {
+    background: linear-gradient(180deg, var(--pitch-2) 0%, var(--pitch) 100%);
+    border: 1px solid var(--green-line);
+    border-radius: 6px;
+    padding: 3rem 2rem 2.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .stage::before, .stage::after {
+    content: '';
+    position: absolute;
+    width: 30px; height: 30px;
+    border: 2px solid var(--gold);
+  }
+  .stage::before { top: 14px; left: 14px; border-right: none; border-bottom: none; }
+  .stage::after { bottom: 14px; right: 14px; border-left: none; border-top: none; }
+
+  .reveal-prompt {
+    font-size: 0.75rem;
+    letter-spacing: 0.4em;
+    color: var(--cream-dim);
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+    min-height: 1.2em;
+  }
+
+  .reveal-flag {
+    font-size: 4rem;
+    line-height: 1;
+    margin-bottom: 0.6rem;
+    min-height: 1.1em;
+  }
+
+  .reveal-team {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(1.8rem, 5.5vw, 3.6rem);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    line-height: 1;
+    margin-bottom: 0.6rem;
+    color: var(--cream);
+    transition: color 0.2s;
+    min-height: 1.1em;
+  }
+  .reveal-team.spinning { color: var(--gold); }
+  .reveal-team.flash { animation: flash 0.6s ease-out; }
+
+  @keyframes flash {
+    0% { transform: scale(0.85); opacity: 0; }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .reveal-meta {
+    font-size: 0.85rem;
+    color: var(--cream-dim);
+    margin-bottom: 1rem;
+    letter-spacing: 0.05em;
+    min-height: 1.2em;
+  }
+
+  .reveal-meta .odds {
+    color: var(--gold);
+    font-weight: 700;
+    font-family: 'Anton', sans-serif;
+    letter-spacing: 0.05em;
+    font-size: 1rem;
+  }
+
+  .reveal-recipient {
+    font-size: 1.05rem;
+    color: var(--cream-dim);
+    min-height: 1.5em;
+    letter-spacing: 0.02em;
+  }
+  .reveal-recipient strong {
+    color: var(--gold);
+    font-weight: 700;
+    font-family: 'Anton', sans-serif;
+    letter-spacing: 0.05em;
+    font-size: 1.15rem;
+    text-transform: uppercase;
+  }
+
+  /* Draw button */
+  .actions { text-align: center; margin-bottom: 2.5rem; }
+  .draw-btn {
+    background: var(--red);
+    color: var(--cream);
+    border: none;
+    padding: 1.25rem 4rem;
+    font-family: 'Anton', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    box-shadow: 0 8px 0 var(--red-shadow), 0 15px 30px rgba(214, 48, 49, 0.25);
+    transition: transform 0.1s, box-shadow 0.1s;
+    position: relative;
+  }
+  .draw-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 0 var(--red-shadow), 0 20px 35px rgba(214, 48, 49, 0.35);
+  }
+  .draw-btn:active:not(:disabled) {
+    transform: translateY(4px);
+    box-shadow: 0 4px 0 var(--red-shadow);
+  }
+  .draw-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: 0 4px 0 var(--red-shadow);
+  }
+
+  /* Pool */
+  .pool-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.35em;
+    color: var(--cream-dim);
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 0.85rem;
+  }
+
+  .pool {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 3rem;
+  }
+  .pool-team {
+    background: var(--pitch-2);
+    border: 1px solid var(--green-line);
+    padding: 0.45rem 0.95rem;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    color: var(--cream);
+    transition: opacity 0.3s, text-decoration 0.3s;
+  }
+  .pool-team .odds-chip {
+    color: var(--gold);
+    font-weight: 600;
+    margin-left: 0.35rem;
+    font-size: 0.78rem;
+  }
+  .pool-team.drawn {
+    opacity: 0.25;
+    text-decoration: line-through;
+  }
+
+  /* Player grid */
+  .players-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .player-card {
+    background: var(--pitch-2);
+    border: 1px solid var(--green-line);
+    border-radius: 4px;
+    padding: 1.25rem;
+    position: relative;
+    transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+  }
+  .player-card.highlight {
+    border-color: var(--gold);
+    box-shadow: 0 0 35px rgba(244, 196, 48, 0.3);
+    transform: translateY(-4px);
+  }
+
+  .player-name {
+    font-family: 'Anton', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--green-line);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .player-count {
+    font-size: 0.7rem;
+    color: var(--cream-dim);
+    font-weight: 400;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: 0.05em;
+  }
+
+  .player-teams {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  .player-team {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.88rem;
+    color: var(--cream);
+    padding: 0.2rem 0;
+    animation: slideIn 0.5s ease-out;
+  }
+  .player-team .pl-flag { font-size: 1.2rem; }
+  .player-team .pl-name { flex: 1; line-height: 1.2; }
+  .player-team .pl-rank {
+    font-size: 0.72rem;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateX(-10px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* Empty slot */
+  .empty-slot {
+    font-size: 0.8rem;
+    color: rgba(245,241,232,0.2);
+    font-style: italic;
+    padding: 0.4rem 0;
+    letter-spacing: 0.05em;
+  }
+
+  /* FINAL */
+  .final-screen {
+    text-align: center;
+    padding: 2rem 0 3rem;
+  }
+  .final-screen h2 {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+  .final-screen p {
+    color: var(--cream-dim);
+    font-style: italic;
+    font-size: 1rem;
+  }
+
+  /* Confetti */
+  .confetti {
+    position: fixed;
+    width: 8px;
+    height: 14px;
+    pointer-events: none;
+    animation: fall linear forwards;
+    z-index: 100;
+    top: -20px;
+  }
+  @keyframes fall {
+    to {
+      transform: translateY(110vh) rotate(720deg);
+      opacity: 0;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .container { padding: 1rem 1rem 3rem; }
+    .pool-team { font-size: 0.78rem; padding: 0.35rem 0.7rem; }
+    .players-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .player-card { padding: 0.85rem; }
+    .player-name { font-size: 1.05rem; }
+    .player-team { font-size: 0.78rem; }
+    .draw-btn { padding: 1rem 2.5rem; font-size: 1.25rem; }
+    .stage { padding: 2rem 1rem 2rem; min-height: 280px; }
+    .reveal-flag { font-size: 3rem; }
+    .progress-pip { width: 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="header">
+    <div class="eyebrow">Dogstar Digital × FIFA 2026</div>
+    <h1>The Golden Boot <span class="accent">Sweepstake</span></h1>
+    <p class="sub">12 strikers · 6 hopefuls · one Golden Boot</p>
+  </header>
+
+  <!-- SETUP -->
+  <section class="setup" id="setupScreen">
+    <h2>Enter The Field</h2>
+    <p>Add the six names taking part. Each person walks away with two strikers — one favourite, one outsider.</p>
+    <div id="playerInputs"></div>
+    <button class="btn" id="startBtn">Start The Draw</button>
+  </section>
+
+  <!-- DRAW -->
+  <section class="draw-view" id="drawScreen">
+    <div class="progress" id="progressBar"></div>
+
+    <div class="pot-header">
+      <div class="pot-label">Pot <span id="potNum">2</span> of 2</div>
+      <div class="pot-title" id="potName">The Outsiders</div>
+      <div class="pot-subtitle" id="potDesc">Bookies' picks #7–12 · longer odds, bigger upside</div>
+    </div>
+
+    <div class="stage">
+      <div class="reveal-prompt" id="revealPrompt">Press DRAW to pull the first striker</div>
+      <div class="reveal-flag" id="revealFlag">⚽</div>
+      <div class="reveal-team" id="revealTeam">Ready</div>
+      <div class="reveal-meta" id="revealMeta">&nbsp;</div>
+      <div class="reveal-recipient" id="revealRecipient">&nbsp;</div>
+    </div>
+
+    <div class="actions">
+      <button class="draw-btn" id="drawBtn">DRAW</button>
+    </div>
+
+    <div class="pool-label">Strikers in this pot</div>
+    <div class="pool" id="poolDisplay"></div>
+
+    <div class="players-grid" id="playersGrid"></div>
+  </section>
+
+  <!-- FINAL -->
+  <section class="draw-view" id="finalScreen">
+    <div class="final-screen">
+      <h2>Boots Are Up For Grabs</h2>
+      <p>Two strikers each — one banker, one wildcard. Off to the races.</p>
+    </div>
+    <div class="players-grid" id="finalGrid"></div>
+    <div class="actions" style="margin-top:2rem;">
+      <button class="btn" id="restartBtn" style="max-width: 280px; margin: 0 auto; display: block;">Run It Back</button>
+    </div>
+  </section>
+</div>
+
+<script>
+// Drawn worst-to-best — Pot 2 first, then Pot 1
+const POTS = [
+  {
+    name: "The Outsiders",
+    desc: "Bookies' picks #7–12 · longer odds, bigger upside",
+    teams: [
+      { name: "Julián Álvarez", flag: "🇦🇷", nation: "Argentina", rank: "+3000" },
+      { name: "Raphinha", flag: "🇧🇷", nation: "Brazil", rank: "+2800" },
+      { name: "Lautaro Martínez", flag: "🇦🇷", nation: "Argentina", rank: "+2500" },
+      { name: "Vinícius Jr.", flag: "🇧🇷", nation: "Brazil", rank: "+2500" },
+      { name: "Ousmane Dembélé", flag: "🇫🇷", nation: "France", rank: "+2200" },
+      { name: "Cristiano Ronaldo", flag: "🇵🇹", nation: "Portugal", rank: "+2000" }
+    ]
+  },
+  {
+    name: "The Favourites",
+    desc: "Bookies' picks #1–6 · the market's top fancied",
+    teams: [
+      { name: "Lamine Yamal", flag: "🇪🇸", nation: "Spain", rank: "+1800" },
+      { name: "Mikel Oyarzabal", flag: "🇪🇸", nation: "Spain", rank: "+1600" },
+      { name: "Erling Haaland", flag: "🇳🇴", nation: "Norway", rank: "+1600" },
+      { name: "Lionel Messi", flag: "🇦🇷", nation: "Argentina", rank: "+1600" },
+      { name: "Harry Kane", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", nation: "England", rank: "+700" },
+      { name: "Kylian Mbappé", flag: "🇫🇷", nation: "France", rank: "+600" }
+    ]
+  }
+];
+
+let players = [];
+let currentPotIdx = 0;
+let drawnInPot = [];
+let drawnTeams = new Set();
+let isDrawing = false;
+
+function initSetup() {
+  const inputs = document.getElementById('playerInputs');
+  inputs.innerHTML = Array.from({length: 6}, (_, i) => `
+    <div class="player-input">
+      <span class="num">${String(i+1).padStart(2,'0')}</span>
+      <input type="text" placeholder="Player ${i+1}" id="player${i}" autocomplete="off" />
+    </div>
+  `).join('');
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  players = [];
+  for (let i = 0; i < 6; i++) {
+    const val = document.getElementById('player' + i).value.trim();
+    players.push({ name: val || ('Player ' + (i+1)), teams: [] });
+  }
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('drawScreen').classList.add('active');
+  renderProgress();
+  renderPotHeader();
+  renderPool();
+  renderPlayers();
+});
+
+function renderProgress() {
+  const bar = document.getElementById('progressBar');
+  bar.innerHTML = POTS.map((_, i) => {
+    if (i < currentPotIdx) return '<div class="progress-pip active"></div>';
+    if (i === currentPotIdx) return '<div class="progress-pip current"></div>';
+    return '<div class="progress-pip"></div>';
+  }).join('');
+}
+
+function renderPotHeader() {
+  const pot = POTS[currentPotIdx];
+  document.getElementById('potNum').textContent = POTS.length - currentPotIdx;
+  document.getElementById('potName').textContent = pot.name;
+  document.getElementById('potDesc').textContent = pot.desc;
+}
+
+function renderPool() {
+  const pool = POTS[currentPotIdx].teams;
+  document.getElementById('poolDisplay').innerHTML = pool.map(t =>
+    `<div class="pool-team${drawnTeams.has(t.name) ? ' drawn' : ''}">${t.flag} ${t.name}<span class="odds-chip">${t.rank}</span></div>`
+  ).join('');
+}
+
+function oddsValue(rankStr) {
+  // For sorting: "+600" → 600
+  return parseInt(rankStr.replace(/[^0-9]/g, ''), 10);
+}
+
+function renderPlayers() {
+  document.getElementById('playersGrid').innerHTML = players.map((p, i) => `
+    <div class="player-card" id="pcard${i}">
+      <div class="player-name">
+        <span>${escapeHtml(p.name)}</span>
+        <span class="player-count">${p.teams.length}/2</span>
+      </div>
+      <div class="player-teams">
+        ${p.teams.length === 0 ? '<div class="empty-slot">No strikers yet</div>' : [...p.teams].sort((a,b)=>oddsValue(a.rank)-oddsValue(b.rank)).map(t => `
+          <div class="player-team">
+            <span class="pl-flag">${t.flag}</span>
+            <span class="pl-name">${t.name}</span>
+            <span class="pl-rank">${t.rank}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+document.getElementById('drawBtn').addEventListener('click', () => {
+  if (isDrawing) return;
+  doDraw();
+});
+
+function doDraw() {
+  isDrawing = true;
+  const drawBtn = document.getElementById('drawBtn');
+  drawBtn.disabled = true;
+
+  const pot = POTS[currentPotIdx];
+  const available = pot.teams.filter(t => !drawnTeams.has(t.name));
+  const eligiblePlayers = players.filter(p => !drawnInPot.includes(p));
+
+  const chosenTeam = available[Math.floor(Math.random() * available.length)];
+  const chosenPlayer = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
+  const playerIdx = players.indexOf(chosenPlayer);
+
+  const teamEl = document.getElementById('revealTeam');
+  const flagEl = document.getElementById('revealFlag');
+  const metaEl = document.getElementById('revealMeta');
+  const recipientEl = document.getElementById('revealRecipient');
+  const promptEl = document.getElementById('revealPrompt');
+
+  promptEl.textContent = 'Drawing...';
+  metaEl.innerHTML = '&nbsp;';
+  recipientEl.innerHTML = '&nbsp;';
+  teamEl.classList.add('spinning');
+  teamEl.classList.remove('flash');
+
+  let spinCount = 0;
+  const totalSpins = 18;
+  const spin = () => {
+    const sample = available[Math.floor(Math.random() * available.length)];
+    teamEl.textContent = sample.name;
+    flagEl.textContent = sample.flag;
+    spinCount++;
+    if (spinCount < totalSpins) {
+      const t = spinCount / totalSpins;
+      const delay = 45 + Math.pow(t, 3) * 280;
+      setTimeout(spin, delay);
+    } else {
+      teamEl.textContent = chosenTeam.name;
+      flagEl.textContent = chosenTeam.flag;
+      teamEl.classList.remove('spinning');
+      teamEl.classList.add('flash');
+      promptEl.textContent = `Pot ${POTS.length - currentPotIdx} · The Reveal`;
+      metaEl.innerHTML = `${chosenTeam.nation} &nbsp;·&nbsp; <span class="odds">${chosenTeam.rank}</span>`;
+
+      drawnTeams.add(chosenTeam.name);
+      drawnInPot.push(chosenPlayer);
+      chosenPlayer.teams.push(chosenTeam);
+
+      const card = document.getElementById('pcard' + playerIdx);
+      card.classList.add('highlight');
+
+      recipientEl.innerHTML = `Goes to <strong>${escapeHtml(chosenPlayer.name)}</strong>`;
+
+      renderPool();
+      renderPlayers();
+
+      setTimeout(() => {
+        const newCard = document.getElementById('pcard' + playerIdx);
+        if (newCard) newCard.classList.remove('highlight');
+
+        if (drawnInPot.length === 6) {
+          currentPotIdx++;
+          drawnInPot = [];
+
+          if (currentPotIdx >= POTS.length) {
+            showFinal();
+            return;
+          }
+          renderProgress();
+          renderPotHeader();
+          renderPool();
+          promptEl.textContent = `Pot ${POTS.length - currentPotIdx} unlocked — press DRAW`;
+          teamEl.textContent = 'Ready';
+          flagEl.textContent = '⚽';
+          metaEl.innerHTML = '&nbsp;';
+          recipientEl.innerHTML = '&nbsp;';
+        }
+
+        drawBtn.disabled = false;
+        isDrawing = false;
+      }, 1900);
+    }
+  };
+  spin();
+}
+
+function showFinal() {
+  document.getElementById('drawScreen').classList.remove('active');
+  document.getElementById('finalScreen').classList.add('active');
+  document.getElementById('finalGrid').innerHTML = players.map(p => {
+    const sortedTeams = [...p.teams].sort((a,b)=>oddsValue(a.rank)-oddsValue(b.rank));
+    const shortestOdds = sortedTeams[0]?.rank || '—';
+    return `
+      <div class="player-card">
+        <div class="player-name">
+          <span>${escapeHtml(p.name)}</span>
+          <span class="player-count">best ${shortestOdds}</span>
+        </div>
+        <div class="player-teams">
+          ${sortedTeams.map(t => `
+            <div class="player-team">
+              <span class="pl-flag">${t.flag}</span>
+              <span class="pl-name">${t.name}</span>
+              <span class="pl-rank">${t.rank}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+  launchConfetti();
+}
+
+function launchConfetti() {
+  const colors = ['#f4c430', '#d63031', '#f5f1e8', '#2a5e3f', '#ffffff', '#d4a017'];
+  for (let i = 0; i < 100; i++) {
+    setTimeout(() => {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      const duration = Math.random() * 2 + 2.5;
+      c.style.animationDuration = duration + 's';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), duration * 1000 + 100);
+    }, i * 35);
+  }
+}
+
+document.getElementById('restartBtn').addEventListener('click', () => {
+  location.reload();
+});
+
+initSetup();
+</script>
+</body>
+</html>

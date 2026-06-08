@@ -548,6 +548,18 @@
     <label style="display:block;font-size:0.7rem;letter-spacing:0.15em;color:var(--cream-dim);text-transform:uppercase;margin-bottom:0.5rem;">Players</label>
     <div id="playerInputs"></div>
     <button class="btn" id="startBtn">Start The Draw</button>
+
+    <div id="resumeBanner" style="display:none;margin-top:1.25rem;padding:1rem 1.25rem;background:rgba(244,196,48,0.1);border:1px solid rgba(244,196,48,0.4);border-radius:4px;">
+      <div style="font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem;">Previous draw found</div>
+      <div id="resumeNames" style="font-size:0.85rem;color:var(--cream-dim);margin-bottom:0.85rem;line-height:1.5;"></div>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <button class="btn" id="resumeBtn" style="flex:1;min-width:140px;">Resume Draw</button>
+        <button class="btn" id="discardBtn" style="flex:1;min-width:140px;background:transparent;border-color:rgba(245,241,232,0.3);color:var(--cream-dim);">Start Fresh</button>
+      </div>
+    </div>
+    <div style="margin-top:0.75rem;text-align:right;">
+      <button onclick="importDraw()" style="background:none;border:none;color:var(--cream-dim);font-size:0.78rem;cursor:pointer;padding:0.25rem 0;text-decoration:underline;text-underline-offset:3px;">Import backup file</button>
+    </div>
   </section>
 
   <!-- DRAW -->
@@ -569,12 +581,18 @@
 
     <div class="actions">
       <button class="draw-btn" id="drawBtn">DRAW</button>
+      <div style="margin-top:0.85rem;">
+        <button id="autoDrawBtn" style="background:none;border:none;color:var(--cream-dim);font-size:0.78rem;cursor:pointer;padding:0.25rem 0;text-decoration:underline;text-underline-offset:3px;letter-spacing:0.05em;">Auto-draw all remaining</button>
+      </div>
     </div>
 
     <div class="pool-label">Teams in this pot</div>
     <div class="pool" id="poolDisplay"></div>
 
     <div class="players-grid" id="playersGrid"></div>
+    <div style="text-align:center;margin-top:1.25rem;">
+      <button onclick="exportDraw()" style="background:none;border:none;color:var(--cream-dim);font-size:0.78rem;cursor:pointer;padding:0.25rem 0;text-decoration:underline;text-underline-offset:3px;">Save backup file</button>
+    </div>
   </section>
 
   <!-- FINAL -->
@@ -585,6 +603,7 @@
     </div>
     <div class="players-grid" id="finalGrid"></div>
     <div class="actions" style="margin-top:2rem;">
+      <button onclick="exportDraw()" class="btn" style="max-width:280px;margin:0 auto 0.75rem;display:block;background:transparent;border-color:var(--gold);color:var(--gold);">Save Backup File</button>
       <button class="btn" id="restartBtn" style="max-width: 280px; margin: 0 auto; display: block;">Run It Back</button>
     </div>
   </section>
@@ -853,6 +872,7 @@ function doDraw() {
       drawnTeams.add(chosenTeam.name);
       drawnInPot.push(chosenPlayer);
       chosenPlayer.teams.push(chosenTeam);
+      saveDrawState('draw');
 
       const card = document.getElementById('pcard' + playerIdx);
       if (card) card.classList.add('highlight');
@@ -892,9 +912,7 @@ function doDraw() {
   spin();
 }
 
-function showFinal() {
-  document.getElementById('drawScreen').classList.remove('active');
-  document.getElementById('finalScreen').classList.add('active');
+function renderFinalGrid() {
   document.getElementById('finalGrid').innerHTML = players.map(p => {
     const totalRank = p.teams.reduce((a,t) => a + t.rank, 0);
     const avgRank = p.teams.length ? (totalRank / p.teams.length).toFixed(1) : '—';
@@ -917,6 +935,13 @@ function showFinal() {
       </div>
     `;
   }).join('');
+}
+
+function showFinal() {
+  document.getElementById('drawScreen').classList.remove('active');
+  document.getElementById('finalScreen').classList.add('active');
+  renderFinalGrid();
+  saveDrawState('final');
   launchConfetti();
 }
 
@@ -937,10 +962,124 @@ function launchConfetti() {
 }
 
 document.getElementById('restartBtn').addEventListener('click', () => {
+  localStorage.removeItem(DRAW_KEY);
   location.reload();
 });
 
+// ── Backup / restore ──────────────────────────────────────────────────────
+const DRAW_KEY = 'wc26-team-draw-v1';
+
+function saveDrawState(phase) {
+  try {
+    localStorage.setItem(DRAW_KEY, JSON.stringify({
+      v: 1, phase,
+      players: players.map(p => ({ name: p.name, teams: p.teams })),
+      currentPotIdx,
+      drawnTeams: [...drawnTeams],
+      drawnInPot: drawnInPot.map(p => players.indexOf(p))
+    }));
+  } catch(e) {}
+}
+
+function applyRestoredState(data) {
+  const n = data.players.length;
+  POTS = generatePots(n);
+  players = data.players.map(p => ({ name: p.name, teams: p.teams || [] }));
+  currentPotIdx = data.currentPotIdx || 0;
+  drawnTeams = new Set(data.drawnTeams || []);
+  drawnInPot = (data.drawnInPot || []).map(i => players[i]).filter(Boolean);
+  document.getElementById('setupScreen').style.display = 'none';
+  if (data.phase === 'final') {
+    document.getElementById('finalScreen').classList.add('active');
+    renderFinalGrid();
+  } else {
+    document.getElementById('drawScreen').classList.add('active');
+    renderProgress();
+    renderPotHeader();
+    renderPool();
+    renderPlayers();
+  }
+}
+
+function exportDraw() {
+  const phase = document.getElementById('finalScreen').classList.contains('active') ? 'final' : 'draw';
+  const blob = new Blob([JSON.stringify({
+    v: 1, phase,
+    players: players.map(p => ({ name: p.name, teams: p.teams })),
+    currentPotIdx, drawnTeams: [...drawnTeams],
+    drawnInPot: drawnInPot.map(p => players.indexOf(p))
+  }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'wc26-draw-backup.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importDraw() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!Array.isArray(data.players)) throw new Error();
+        localStorage.removeItem(DRAW_KEY);
+        applyRestoredState(data);
+      } catch(_) { alert('Invalid backup file.'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function checkForSavedDraw() {
+  try {
+    const raw = localStorage.getItem(DRAW_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data.players) || data.players.length === 0) return;
+    document.getElementById('resumeNames').textContent = data.players.map(p => p.name).join(', ');
+    const banner = document.getElementById('resumeBanner');
+    banner.style.display = 'block';
+    document.getElementById('resumeBtn').addEventListener('click', () => applyRestoredState(data));
+    document.getElementById('discardBtn').addEventListener('click', () => {
+      localStorage.removeItem(DRAW_KEY);
+      banner.style.display = 'none';
+    });
+  } catch(e) {}
+}
+
+function instantDraw() {
+  if (isDrawing) return;
+  // Complete all remaining pots without animation
+  while (currentPotIdx < POTS.length) {
+    const pot = POTS[currentPotIdx];
+    const available = pot.teams.filter(t => !drawnTeams.has(t.name));
+    let eligible = players.filter(p => !drawnInPot.includes(p));
+
+    available.sort(() => Math.random() - 0.5);
+    for (const team of available) {
+      if (eligible.length === 0) eligible = players.filter(p => !drawnInPot.includes(p));
+      if (eligible.length === 0) break;
+      const idx = Math.floor(Math.random() * eligible.length);
+      const player = eligible.splice(idx, 1)[0];
+      drawnTeams.add(team.name);
+      drawnInPot.push(player);
+      player.teams.push(team);
+    }
+    currentPotIdx++;
+    drawnInPot = [];
+  }
+  showFinal();
+}
+
+document.getElementById('autoDrawBtn').addEventListener('click', instantDraw);
+
 initSetup();
+checkForSavedDraw();
 </script>
 </body>
 </html>

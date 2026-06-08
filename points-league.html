@@ -2396,7 +2396,9 @@ function renderSettings() {
       <div class="settings-card">
         <h3>Tools</h3>
         <label>Export / backup</label>
-        <button class="btn full" id="exportBtn" style="margin-bottom:0.75rem">Download data</button>
+        <button class="btn full" id="exportBtn" style="margin-bottom:0.5rem">Download data</button>
+        <label>Import backup</label>
+        <button class="btn full" id="importBtn" style="margin-bottom:0.75rem">Restore from file</button>
         <label>Reset all data</label>
         <button class="btn full danger" id="resetBtn">Clear scores &amp; bracket</button>
         <p style="margin-top:0.85rem;font-size:0.75rem;color:var(--cream-faint);line-height:1.5;">Scores save automatically to this browser. Use Export before clearing to keep a backup.</p>
@@ -2426,6 +2428,33 @@ function renderSettings() {
     a.download = `world-cup-26-league-${new Date().toISOString().slice(0,10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  });
+  document.getElementById('importBtn').addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = '.json';
+    input.onchange = e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if (typeof data.scores !== 'object') throw new Error();
+          if (!confirm('Replace all current data with this backup?')) return;
+          state.scores = data.scores || {};
+          state.ko = data.ko && Object.keys(data.ko).length ? data.ko : defaultKoState();
+          state.buyIn = typeof data.buyIn === 'number' ? data.buyIn : state.buyIn;
+          if (Array.isArray(data.owners) && data.owners.length >= 2) {
+            OWNERS = data.owners.map(o => ({ ...o, teams: [...(o.teams || [])] }));
+          }
+          saveState();
+          renderAll();
+          showToast('Backup restored');
+        } catch(_) { alert('Invalid backup file.'); }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
   });
   document.getElementById('resetBtn').addEventListener('click', () => {
     if (confirm('Clear all entered scores and bracket selections? This cannot be undone.')) {

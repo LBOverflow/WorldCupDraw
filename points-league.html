@@ -1601,6 +1601,22 @@ const KO_TEMPLATE = {
 const STAGE_BONUS = { r16: 5, qf: 10, sf: 15, final: 20, winner: 30 };
 const PRIZE_SPLIT = [0.5, 0.25, 0.15, 0.10, 0, 0];
 
+// Draw results — used as default when no localStorage is present
+const DEFAULT_DRAW_PLAYERS = [
+  {name:'Chris',   teams:['Panama','Ivory Coast','Uruguay','Colombia']},
+  {name:'Layton',  teams:['South Africa','Canada','Japan','France']},
+  {name:'Oliver',  teams:['Iraq','Türkiye','Australia','Croatia']},
+  {name:'James C', teams:['Cape Verde','DR Congo','Austria','Argentina']},
+  {name:'Adam T',  teams:['New Zealand','Scotland','Egypt','Belgium']},
+  {name:'Waleed',  teams:['Ghana','Sweden','Senegal','Netherlands']},
+  {name:'Morgan',  teams:['Haiti','Bosnia & Herzegovina','Switzerland','Germany']},
+  {name:'Aaron',   teams:['Paraguay','Czechia','United States','Morocco']},
+  {name:'Fatima',  teams:['Saudi Arabia','Norway','Iran','Spain']},
+  {name:'Dan',     teams:['Curaçao','Qatar','Mexico','Portugal']},
+  {name:'Emily',   teams:['Jordan','Algeria','Ecuador','Brazil']},
+  {name:'Mystery', teams:['Uzbekistan','Tunisia','South Korea','England']}
+];
+
 /* ========================================================================
    STATE
    ======================================================================== */
@@ -1641,6 +1657,14 @@ function loadState() {
       }
     } else {
       state.ko = defaultKoState();
+      // No saved data — load the real draw as the default
+      if (OWNERS.length === 0) {
+        OWNERS = DEFAULT_DRAW_PLAYERS.map((p, i) => ({
+          name: p.name,
+          teams: [...p.teams],
+          color: pickPlayerColor(i, DEFAULT_DRAW_PLAYERS.length)
+        }));
+      }
     }
   } catch(e) {
     state.ko = defaultKoState();
@@ -2439,17 +2463,34 @@ function renderSettings() {
       reader.onload = ev => {
         try {
           const data = JSON.parse(ev.target.result);
-          if (typeof data.scores !== 'object') throw new Error();
-          if (!confirm('Replace all current data with this backup?')) return;
-          state.scores = data.scores || {};
-          state.ko = data.ko && Object.keys(data.ko).length ? data.ko : defaultKoState();
-          state.buyIn = typeof data.buyIn === 'number' ? data.buyIn : state.buyIn;
-          if (Array.isArray(data.owners) && data.owners.length >= 2) {
-            OWNERS = data.owners.map(o => ({ ...o, teams: [...(o.teams || [])] }));
+          // Accept draw-night backup format (has players array)
+          if (Array.isArray(data.players) && data.players.length >= 2) {
+            if (!confirm('Load this draw backup? Scores and bracket will be reset.')) return;
+            OWNERS = data.players.map((p, i) => ({
+              name: p.name,
+              teams: p.teams.map(t => typeof t === 'string' ? t : t.name),
+              color: pickPlayerColor(i, data.players.length)
+            }));
+            state.scores = {};
+            state.ko = defaultKoState();
+            saveState();
+            renderAll();
+            showToast('Draw imported');
+          } else if (typeof data.scores === 'object') {
+            // Standard league backup
+            if (!confirm('Replace all current data with this backup?')) return;
+            state.scores = data.scores || {};
+            state.ko = data.ko && Object.keys(data.ko).length ? data.ko : defaultKoState();
+            state.buyIn = typeof data.buyIn === 'number' ? data.buyIn : state.buyIn;
+            if (Array.isArray(data.owners) && data.owners.length >= 2) {
+              OWNERS = data.owners.map(o => ({ ...o, teams: [...(o.teams || [])] }));
+            }
+            saveState();
+            renderAll();
+            showToast('Backup restored');
+          } else {
+            throw new Error();
           }
-          saveState();
-          renderAll();
-          showToast('Backup restored');
         } catch(_) { alert('Invalid backup file.'); }
       };
       reader.readAsText(file);

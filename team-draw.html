@@ -978,6 +978,11 @@ function saveDrawState(phase) {
       drawnTeams: [...drawnTeams],
       drawnInPot: drawnInPot.map(p => players.indexOf(p))
     }));
+    if (phase === 'final') {
+      localStorage.setItem('wc26-draw-complete', JSON.stringify({
+        players: players.map(p => ({ name: p.name, teams: p.teams.map(t => t.name) }))
+      }));
+    }
   } catch(e) {}
 }
 

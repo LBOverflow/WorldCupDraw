@@ -1657,13 +1657,28 @@ function loadState() {
       }
     } else {
       state.ko = defaultKoState();
-      // No saved data — load the real draw as the default
       if (OWNERS.length === 0) {
-        OWNERS = DEFAULT_DRAW_PLAYERS.map((p, i) => ({
-          name: p.name,
-          teams: [...p.teams],
-          color: pickPlayerColor(i, DEFAULT_DRAW_PLAYERS.length)
-        }));
+        let loaded = false;
+        try {
+          const drawRaw = localStorage.getItem('wc26-draw-complete');
+          if (drawRaw) {
+            const drawData = JSON.parse(drawRaw);
+            if (Array.isArray(drawData.players) && drawData.players.length >= 2) {
+              OWNERS = drawData.players.map((p, i) => ({
+                name: p.name, teams: [...p.teams],
+                color: pickPlayerColor(i, drawData.players.length)
+              }));
+              loaded = true;
+            }
+          }
+        } catch(e) {}
+        if (!loaded) {
+          OWNERS = DEFAULT_DRAW_PLAYERS.map((p, i) => ({
+            name: p.name,
+            teams: [...p.teams],
+            color: pickPlayerColor(i, DEFAULT_DRAW_PLAYERS.length)
+          }));
+        }
       }
     }
   } catch(e) {
@@ -2507,10 +2522,30 @@ function renderSettings() {
   });
 }
 
+function loadDrawFromDrawPage(requireConfirm) {
+  try {
+    const drawRaw = localStorage.getItem('wc26-draw-complete');
+    if (!drawRaw) { showToast('No completed draw found on this device', true); return; }
+    const drawData = JSON.parse(drawRaw);
+    if (!Array.isArray(drawData.players) || drawData.players.length < 2) throw new Error();
+    if (requireConfirm && !confirm('Load draw from the draw page? Scores and bracket will be reset.')) return;
+    OWNERS = drawData.players.map((p, i) => ({
+      name: p.name, teams: [...p.teams],
+      color: pickPlayerColor(i, drawData.players.length)
+    }));
+    state.scores = {};
+    state.ko = defaultKoState();
+    saveState();
+    renderAll();
+    showToast('Draw loaded from draw page');
+  } catch(e) { showToast('No valid draw found', true); }
+}
+
 function renderDraw() {
   const view = document.getElementById('view-draw');
   const totalTeams = OWNERS.reduce((sum, o) => sum + o.teams.length, 0);
   const hasDraw = OWNERS.length > 0;
+  const hasPendingDraw = !!localStorage.getItem('wc26-draw-complete');
 
   if (!hasDraw) {
     view.innerHTML = `
@@ -2520,9 +2555,11 @@ function renderDraw() {
         <p style="color:var(--cream-dim);font-size:0.95rem;line-height:1.6;max-width:520px;margin:0 auto 1.5rem;">
           Run a live sweepstake draw to set up your group and assign teams. Choose anything from 2 to 48 players — the pot structure adapts.
         </p>
-        <button class="btn" id="newDrawBtn" style="max-width:280px;margin:0 auto;display:block;">Start The Live Draw</button>
+        ${hasPendingDraw ? `<button class="btn" id="loadDrawPageBtn" style="max-width:280px;margin:0 auto 0.75rem;display:block;">Load Draw from Draw Page</button>` : ''}
+        <button class="btn" id="newDrawBtn" style="max-width:280px;margin:0 auto;display:block;${hasPendingDraw ? 'background:transparent;border:1px solid var(--green-line);color:var(--cream-dim);' : ''}">Start The Live Draw</button>
       </div>
     `;
+    if (hasPendingDraw) document.getElementById('loadDrawPageBtn').addEventListener('click', () => loadDrawFromDrawPage(false));
     document.getElementById('newDrawBtn').addEventListener('click', openDrawOverlay);
     return;
   }
@@ -2540,6 +2577,7 @@ function renderDraw() {
       </p>
       <div class="draw-actions">
         <button class="btn" id="newDrawBtn">Run New Team Draw</button>
+        ${hasPendingDraw ? `<button class="btn" id="loadDrawPageBtn" style="background:transparent;border:1px solid var(--gold);color:var(--gold);">Load Draw from Draw Page</button>` : ''}
         <button class="btn danger" id="clearDrawBtn" style="background:transparent;color:var(--cream-dim);border:1px solid var(--green-line);">Clear Draw</button>
       </div>
     </div>
@@ -2570,6 +2608,8 @@ function renderDraw() {
   `;
 
   document.getElementById('newDrawBtn').addEventListener('click', openDrawOverlay);
+  const loadDrawPageBtn = document.getElementById('loadDrawPageBtn');
+  if (loadDrawPageBtn) loadDrawPageBtn.addEventListener('click', () => loadDrawFromDrawPage(true));
   const clearBtn = document.getElementById('clearDrawBtn');
   if (clearBtn) {
     clearBtn.addEventListener('click', () => {
